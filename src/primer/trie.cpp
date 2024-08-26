@@ -1,6 +1,7 @@
 #include "primer/trie.h"
 #include <string_view>
 #include "common/exception.h"
+#include<stack>
 
 namespace bustub {
 
@@ -12,6 +13,17 @@ auto Trie::Get(std::string_view key) const -> const T * {
   // nullptr. After you find the node, you should use `dynamic_cast` to cast it to `const TrieNodeWithValue<T> *`. If
   // dynamic_cast returns `nullptr`, it means the type of the value is mismatched, and you should return nullptr.
   // Otherwise, return the value.
+  if (root_ == nullptr) return nullptr;
+  const TrieNode *tmp = root_.get();
+  for (char c : key) {
+    if (tmp->children_.find(c) == tmp->children_.end()) {
+      return nullptr;
+    }
+    tmp = tmp->children_.at(c).get();
+  }
+  const TrieNodeWithValue<T> *q = dynamic_cast<const TrieNodeWithValue<T> *>(tmp);
+  if (q) return q->value_.get();
+  return nullptr;
 }
 
 template <class T>
@@ -25,7 +37,23 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
 
 auto Trie::Remove(std::string_view key) const -> Trie {
   throw NotImplementedException("Trie::Remove is not implemented.");
-
+  if (root_ == nullptr) return Trie();
+  if (key.length() == 0) return *this;
+  std::stack<std::shared_ptr<const TrieNode>> stk;
+  std::shared_ptr<const TrieNode> p = root_;
+  for (char c : key) {
+    if (p->children_.find(c) == p->children_.end()){
+      return Trie();
+    }
+    stk.push(p);
+    p = p->children_.at(c);
+  }
+  if(p->children_.size()){
+   auto it = stk.top();
+   it->children_[key[key.size() - 1]] = std::shared_ptr<const TrieNode>(p->Clone());
+  } else {
+    
+  }
   // You should walk through the trie and remove nodes if necessary. If the node doesn't contain a value any more,
   // you should convert it to `TrieNode`. If a node doesn't have children any more, you should remove it.
 }
